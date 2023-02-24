@@ -13,23 +13,30 @@ SPRITE_WIDTH, SPRITE_HEIGHT = 50, 50
 BULLET_WIDTH, BULLET_HEIGHT = 1, 1
 
 # Load images
-TANK_NORTH = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'tank-north.png')),
-                                    (SPRITE_WIDTH, SPRITE_HEIGHT))
-TANK_SOUTH = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'tank-south.png')),
-                                    (SPRITE_WIDTH, SPRITE_HEIGHT))
-TANK_EAST = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'tank-east.png')),
-                                   (SPRITE_WIDTH, SPRITE_HEIGHT))
-TANK_WEST = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'tank-west.png')),
-                                   (SPRITE_WIDTH, SPRITE_HEIGHT))
+TANK_NORTH = pygame.image.load(os.path.join('assets', 'tank-north.png'))
+TANK_NORTH = pygame.transform.scale(TANK_NORTH, (SPRITE_WIDTH, SPRITE_HEIGHT))
 
-# TODO: give this their according sizes
-BULLET = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'bullet.png')), (BULLET_WIDTH, BULLET_HEIGHT))
+TANK_SOUTH = pygame.image.load(os.path.join('assets', 'tank-south.png'))
+TANK_SOUTH = pygame.transform.scale(TANK_SOUTH, (SPRITE_WIDTH, SPRITE_HEIGHT))
+
+TANK_EAST = pygame.image.load(os.path.join('assets', 'tank-east.png'))
+TANK_EAST = pygame.transform.scale(TANK_EAST, (SPRITE_WIDTH, SPRITE_HEIGHT))
+
+TANK_WEST = pygame.image.load(os.path.join('assets', 'tank-west.png'))
+TANK_WEST = pygame.transform.scale(TANK_WEST, (SPRITE_WIDTH, SPRITE_HEIGHT))
+
+BULLET = pygame.image.load(os.path.join('assets', 'bullet.png'))
+BULLET = pygame.transform.scale(BULLET, (BULLET_WIDTH, BULLET_HEIGHT))
 
 ENEMY = pygame.image.load(os.path.join('assets', 'enemy.png'))
-EXPLOSION = pygame.image.load(os.path.join('assets', 'explosion.png'))
+ENEMY = pygame.transform.scale(ENEMY, (SPRITE_WIDTH, SPRITE_HEIGHT))
 
-# BG color
+EXPLOSION = pygame.image.load(os.path.join('assets', 'explosion.png'))
+EXPLOSION = pygame.transform.scale(EXPLOSION, (SPRITE_WIDTH - 10, SPRITE_HEIGHT - 10))
+
+# Colors
 WHITE = (255, 255, 255)
+DARK_RED = (150, 0, 0)
 
 
 class Tank:
@@ -46,7 +53,6 @@ class Tank:
         self.vel = 5
         self.bullets = []
 
-
     def draw(self, window):
         if self.east:
             window.blit(TANK_EAST, (self.x, self.y))
@@ -56,8 +62,6 @@ class Tank:
             window.blit(TANK_WEST, (self.x, self.y))
         else:
             window.blit(self.image, (self.x, self.y))
-        for bullet in self.bullets:
-            bullet.draw(window)
 
     def get_width(self):
         return self.image.get_width()
@@ -75,14 +79,15 @@ class Projectile:
         self.vel = 8
         self.direction = direction
         self.image = BULLET
+        self.mask = pygame.mask.from_surface(self.image)
 
     def move(self):
         self.x += self.direction[0] * self.vel
         self.y += self.direction[1] * self.vel
 
     def draw(self, window):
-        window.blit(self.image, (self.x, self.y))
-        # pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
+        # window.blit(self.image, (self.x, self.y))
+        pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
 
 
 # class Enemy(Sprite):
@@ -159,9 +164,9 @@ def main():
             tank.north, tank.east, tank.south = False, False, False
             direction = (-1, 0)
         if keys[pygame.K_SPACE]:
-            if len(bullets) < 5:
+            if len(bullets) < 7:
                 tank_x, tank_y = round(tank.x + tank.get_width() // 2), round(tank.y + tank.get_height() // 2)
-                bullet = Projectile(tank_x, tank_y, 6, (0, 0, 0), direction)
+                bullet = Projectile(tank_x, tank_y, 5, (32, 32, 96), direction)
                 bullets.append(bullet)
 
         redraw_window()
