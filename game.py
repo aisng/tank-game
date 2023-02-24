@@ -1,7 +1,9 @@
+import math
+
 import pygame
 import os
 import time
-import random
+from random import randint
 
 pygame.font.init()
 
@@ -39,37 +41,6 @@ WHITE = (255, 255, 255)
 DARK_RED = (150, 0, 0)
 
 
-class Tank:
-    def __init__(self, x, y, health=100):
-        self.x = x
-        self.y = y
-        self.health = health
-        self.north = False
-        self.east = False
-        self.south = False
-        self.west = False
-        self.image = TANK_NORTH
-        self.max_health = health
-        self.vel = 5
-        self.bullets = []
-
-    def draw(self, window):
-        if self.east:
-            window.blit(TANK_EAST, (self.x, self.y))
-        elif self.south:
-            window.blit(TANK_SOUTH, (self.x, self.y))
-        elif self.west:
-            window.blit(TANK_WEST, (self.x, self.y))
-        else:
-            window.blit(self.image, (self.x, self.y))
-
-    def get_width(self):
-        return self.image.get_width()
-
-    def get_height(self):
-        return self.image.get_height()
-
-
 class Projectile:
     def __init__(self, x, y, radius, color, direction):
         self.x = x
@@ -90,24 +61,79 @@ class Projectile:
         pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
 
 
-# class Enemy(Sprite):
-#     def __init__(self, x, y, health=100):
-#         super().__init__(x, y, health)
-#         self.sprite_image = ENEMY
-#         # self.mask = pygame.mask.from_surface(self.sprite_image)
+class Tank:
+    def __init__(self, x, y, health=100):
+        self.x = x
+        self.y = y
+        self.health = health
+        self.north = False
+        self.east = False
+        self.south = False
+        self.west = False
+        self.image = TANK_NORTH
+        self.max_health = health
+        self.vel = 5
+        self.bullets = []
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def draw(self, window):
+        if self.east:
+            window.blit(TANK_EAST, (self.x, self.y))
+        elif self.south:
+            window.blit(TANK_SOUTH, (self.x, self.y))
+        elif self.west:
+            window.blit(TANK_WEST, (self.x, self.y))
+        else:
+            window.blit(self.image, (self.x, self.y))
+
+    def get_width(self):
+        return self.image.get_width()
+
+    def get_height(self):
+        return self.image.get_height()
+
+
+class Enemy:
+    def __init__(self, x, y, health=100):
+        self.x = x
+        self.y = y
+        self.health = health
+        self.image = ENEMY
+        self.vel = 2.5
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def draw(self, window):
+        window.blit(self.image, (self.x, self.y))
+
+    def chase_tank(self, tank):
+        # Find direction vector (dx, dy) between enemy and player.
+        dx, dy = tank.x - self.x, tank.y - self.y
+        dist = math.hypot(dx, dy)
+        dx, dy = dx / dist, dy / dist  # Normalize.
+        # Move along this normalized vector towards the player at current speed.
+        self.x += dx * self.vel
+        self.y += dy * self.vel
+
+
+def collide(obj1, obj2):
+    offset_x = obj2.x - obj1.x
+    offset_y = obj2.y - obj1.y
+    return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) != None
 
 
 def main():
     run = True
     FPS = 60
-    level = 1
+    level = 0
     lives = 5
     main_font = pygame.font.SysFont("comicsans", 25)
 
     player_vel = 5
     tank = Tank(300, 200)
+    # enemy = Enemy(randint(10, WIDTH - 10), randint(10, HEIGHT - 10))
     bullets = []
-
+    enemies = []
+    wave_length = 0
     direction = (0, -1)
 
     clock = pygame.time.Clock()
@@ -124,6 +150,9 @@ def main():
         for bullet in bullets:
             bullet.draw(WIN)
 
+        for enemy in enemies:
+            enemy.draw(WIN)
+
         tank.draw(WIN)
 
         pygame.display.update()
@@ -134,6 +163,13 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+
+        if len(enemies) == 0:
+            level += 1
+            wave_length += 1
+            for i in range(wave_length):
+                enemy = Enemy(randint(10, WIDTH - 10), randint(10, HEIGHT - 10))
+                enemies.append(enemy)
 
         for bullet in bullets:
             bullet.move()
@@ -168,6 +204,13 @@ def main():
                 tank_x, tank_y = round(tank.x + tank.get_width() // 2), round(tank.y + tank.get_height() // 2)
                 bullet = Projectile(tank_x, tank_y, 5, (32, 32, 96), direction)
                 bullets.append(bullet)
+
+        for enemy in enemies:
+            enemy.chase_tank(tank)
+
+            if collide(enemy, tank):
+                lives -= 1
+                enemies.pop(enemies.index(enemy))
 
         redraw_window()
 
