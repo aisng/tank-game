@@ -128,8 +128,8 @@ def main():
         WIN.blit(lives_label, (10, 10))
         WIN.blit(level_label, (WIDTH - level_label.get_width() - 10, 10))
 
-        for bullet in bullets:
-            bullet.draw(WIN)
+        # for bullet in bullets:
+        #     bullet.draw(WIN)
 
         tank.draw(WIN)
 
@@ -176,7 +176,7 @@ def main():
             #     tank_x, tank_y = round(tank.x + tank.get_width() // 2), round(tank.y + tank.get_height() // 2)
             #     bullet = Projectile(tank_x, tank_y, 6, (0, 0, 0), direction)
             #     bullets.append(bullet)
-        tank.move_bullets(direction)
+            tank.move_bullets(direction)
         redraw_window()
 
 
