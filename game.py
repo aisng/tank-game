@@ -7,8 +7,8 @@ from random import randint
 
 pygame.font.init()
 
-WIDTH, HEIGHT = 1200, 800
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+WIN_WIDTH, WIN_HEIGHT = 1200, 800
+WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 pygame.display.set_caption("Tank game")
 
 SPRITE_WIDTH, SPRITE_HEIGHT = 50, 50
@@ -47,15 +47,12 @@ EXPLOSION = pygame.transform.scale(EXPLOSION, (SPRITE_WIDTH - 10, SPRITE_HEIGHT 
 
 # Colors
 WHITE = (255, 255, 255)
-DARK_BLUE = (32, 32, 96)
 
 
 class Projectile:
     def __init__(self, x, y, direction):
         self.x = x
         self.y = y
-        # self.radius = radius
-        # self.color = color
         self.vel = 8
         self.direction = direction
         self.image = BULLET_NORTH
@@ -66,16 +63,14 @@ class Projectile:
         self.y += self.direction[1] * self.vel
 
     def draw(self, window):
-        if self.direction == (1, 0):
+        if self.direction == (1, 0):  # east
             window.blit(BULLET_EAST, (self.x, self.y))
-        elif self.direction == (0, 1):
+        elif self.direction == (0, 1):  # south
             window.blit(BULLET_SOUTH, (self.x, self.y))
-        elif self.direction == (-1, 0):
+        elif self.direction == (-1, 0):  # west
             window.blit(BULLET_WEST, (self.x, self.y))
-        else:
+        else:  # north
             window.blit(self.image, (self.x, self.y))
-
-        # pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
 
     def collision(self, obj):
         return collide(self, obj)
@@ -109,25 +104,33 @@ class Tank:
 
     def shoot(self):
         if len(self.bullets) < 5:
-            tank_x, tank_y = round(self.x + self.get_width() // 2), round(
-                self.y + self.get_height() // 2)
-            bullet = Projectile(tank_x, tank_y, self.bullet_direction)
+            # center the bullet img on the tank
+            tank_center_x, tank_center_y = round(self.x + self.get_width() / 2), round(self.y + self.get_height() / 2)
+            bullet_center_x, bullet_center_y = round(tank_center_x - BULLET_WIDTH / 2), round(
+                tank_center_y - BULLET_HEIGHT / 2)
+            # make bullets appear as being shot from tank's cannon
+            if self.east:
+                bullet_center_x += 40
+            elif self.south:
+                bullet_center_y += 40
+            elif self.west:
+                bullet_center_x -= 40
+            else:
+                bullet_center_y -= 40
+            bullet = Projectile(bullet_center_x, bullet_center_y, self.bullet_direction)
             self.bullets.append(bullet)
 
     def move_bullets(self, objs):
-        win_rect = pygame.Rect(0, 0, WIDTH, HEIGHT)
+        win_rect = pygame.Rect(0, 0, WIN_WIDTH, WIN_HEIGHT)
         for bullet in self.bullets:
             bullet.move()
             if not win_rect.collidepoint((bullet.x, bullet.y)):  # making bullet disappear if off-screen
-                # self.bullets.pop(self.bullets.index(bullet))
                 self.bullets.remove(bullet)
-            else:
+            else:  # remove bullet object and enemy if they collide
                 for obj in objs:
                     if bullet.collision(obj):
-                        # objs.pop(objs.index(obj))
                         objs.remove(obj)
                         if bullet in self.bullets:
-                            # self.bullets.pop(self.bullets.index(bullet))
                             self.bullets.remove(bullet)
 
     def move_north(self):
@@ -162,10 +165,9 @@ class Tank:
 
 
 class Enemy:
-    def __init__(self, x, y, health=100):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.health = health
         self.image = ENEMY
         self.vel = 2
         self.mask = pygame.mask.from_surface(self.image)
@@ -176,8 +178,8 @@ class Enemy:
     def chase_tank(self, tank):
         # Find direction vector (dx, dy) between enemy and player.
         dx, dy = tank.x - self.x, tank.y - self.y
-        dist = math.hypot(dx, dy)
-        dx, dy = dx / dist, dy / dist  # Normalize.
+        distance = math.hypot(dx, dy)
+        dx, dy = dx / distance, dy / distance  # Normalize.
         # Move along this normalized vector towards the player at current speed.
         self.x += dx * self.vel
         self.y += dy * self.vel
@@ -186,6 +188,7 @@ class Enemy:
 def collide(obj1, obj2):
     offset_x = obj2.x - obj1.x
     offset_y = obj2.y - obj1.y
+    obj1.mask = pygame.mask.from_surface(EXPLOSION)
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) is not None
 
 
@@ -196,8 +199,8 @@ def main():
     lives = 5
     main_font = pygame.font.SysFont("comicsans", 25)
 
-    starting_pos_x = (WIDTH - WIDTH / 2) - (SPRITE_WIDTH - SPRITE_WIDTH / 2)
-    starting_pos_y = (HEIGHT - HEIGHT / 2) - (SPRITE_HEIGHT - SPRITE_HEIGHT / 2)
+    starting_pos_x = round(WIN_WIDTH - WIN_WIDTH / 2) - round(SPRITE_WIDTH - SPRITE_WIDTH / 2)
+    starting_pos_y = round(WIN_HEIGHT - WIN_HEIGHT / 2) - round(SPRITE_HEIGHT - SPRITE_HEIGHT / 2)
     player_vel = 5
     tank = Tank(starting_pos_x, starting_pos_y)
 
@@ -213,10 +216,7 @@ def main():
         level_label = main_font.render(f"Level: {level}", True, (0, 0, 0))
 
         WIN.blit(lives_label, (10, 10))
-        WIN.blit(level_label, (WIDTH - level_label.get_width() - 10, 10))
-
-        # for bullet in bullets:
-        #     bullet.draw(WIN)
+        WIN.blit(level_label, (WIN_WIDTH - level_label.get_width() - 10, 10))
 
         for enemy in enemies:
             enemy.draw(WIN)
@@ -235,16 +235,16 @@ def main():
             level += 1
             wave_length += 1
             for i in range(wave_length):
-                enemy = Enemy(randint(10, WIDTH - 10), randint(10, HEIGHT - 10))
+                enemy = Enemy(randint(10, WIN_WIDTH - 10), randint(10, WIN_HEIGHT - 10))
                 enemies.append(enemy)
 
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_UP] and tank.y - tank.vel > 0:
             tank.move_north()
-        elif keys[pygame.K_RIGHT] and tank.x + tank.vel + tank.get_width() < WIDTH:
+        elif keys[pygame.K_RIGHT] and tank.x + tank.vel + tank.get_width() < WIN_WIDTH:
             tank.move_east()
-        elif keys[pygame.K_DOWN] and tank.y + player_vel + tank.get_height() < HEIGHT:
+        elif keys[pygame.K_DOWN] and tank.y + player_vel + tank.get_height() < WIN_HEIGHT:
             tank.move_south()
         elif keys[pygame.K_LEFT] and tank.x - tank.vel > 0:
             tank.move_west()
