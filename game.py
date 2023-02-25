@@ -60,6 +60,9 @@ class Projectile:
         # window.blit(self.image, (self.x, self.y))
         pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
 
+    def collision(self, obj):
+        return collide(self, obj)
+
 
 class Tank:
     def __init__(self, x, y, health=100):
@@ -130,6 +133,7 @@ def main():
 
     player_vel = 5
     tank = Tank(300, 200)
+
     # enemy = Enemy(randint(10, WIDTH - 10), randint(10, HEIGHT - 10))
     bullets = []
     enemies = []
@@ -207,10 +211,10 @@ def main():
 
         for enemy in enemies:
             enemy.chase_tank(tank)
-
             if collide(enemy, tank):
                 lives -= 1
                 enemies.pop(enemies.index(enemy))
+
 
         redraw_window()
 
