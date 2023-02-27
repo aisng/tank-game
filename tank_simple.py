@@ -4,8 +4,8 @@ import random
 class Tank:
     def __init__(self):
         # tank coordinates
-        self.x = 430
-        self.y = 230
+        self.x = 0
+        self.y = 0
         self.direction = str()
         self.shots_north = 0
         self.shots_east = 0
