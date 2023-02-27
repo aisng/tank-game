@@ -43,10 +43,11 @@ ENEMY = pygame.image.load(os.path.join('assets', 'enemy.png'))
 ENEMY = pygame.transform.scale(ENEMY, (SPRITE_WIDTH, SPRITE_HEIGHT))
 
 EXPLOSION = pygame.image.load(os.path.join('assets', 'explosion.png'))
-EXPLOSION = pygame.transform.scale(EXPLOSION, (SPRITE_WIDTH - 10, SPRITE_HEIGHT - 10))
+EXPLOSION = pygame.transform.scale(EXPLOSION, (SPRITE_WIDTH, SPRITE_HEIGHT))
 
 # Colors
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
 
 class Projectile:
@@ -77,6 +78,8 @@ class Projectile:
 
 
 class Tank:
+    COOLDOWN = 30
+
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -88,7 +91,10 @@ class Tank:
         self.vel = 5
         self.bullets = []
         self.bullet_direction = (0, -1)
+        self.bullet_cooldown = 0
         self.mask = pygame.mask.from_surface(self.image)
+        self.score = 0
+        self.destroyed = False
 
     def draw(self, window):
         if self.east:
@@ -101,9 +107,14 @@ class Tank:
             window.blit(self.image, (self.x, self.y))
         for bullet in self.bullets:
             bullet.draw(window)
+        if self.destroyed:
+            window.blit(EXPLOSION, (self.x, self.y))
 
     def shoot(self):
-        if len(self.bullets) < 5:
+        self.cooldown()
+        if self.bullet_cooldown == 0:
+
+        # if len(self.bullets) < 4:
             # center the bullet img on the tank
             tank_center_x, tank_center_y = round(self.x + self.get_width() / 2), round(self.y + self.get_height() / 2)
             bullet_center_x, bullet_center_y = round(tank_center_x - BULLET_WIDTH / 2), round(
@@ -118,18 +129,27 @@ class Tank:
             else:
                 bullet_center_y -= 40
             bullet = Projectile(bullet_center_x, bullet_center_y, self.bullet_direction)
+            self.bullet_cooldown = 1
             self.bullets.append(bullet)
 
+    def cooldown(self):
+        if self.bullet_cooldown >= self.COOLDOWN:
+            self.bullet_cooldown = 0
+        elif self.bullet_cooldown > 0:
+            self.bullet_cooldown += 1
+
     def move_bullets(self, objs):
+        self.cooldown()
         win_rect = pygame.Rect(0, 0, WIN_WIDTH, WIN_HEIGHT)
         for bullet in self.bullets:
             bullet.move()
             if not win_rect.collidepoint((bullet.x, bullet.y)):  # making bullet disappear if off-screen
                 self.bullets.remove(bullet)
-            else:  # remove bullet object and enemy if they collide
+            else:  # remove bullet obj and enemy obj if they collide
                 for obj in objs:
                     if bullet.collision(obj):
                         objs.remove(obj)
+                        self.score += 10
                         if bullet in self.bullets:
                             self.bullets.remove(bullet)
 
@@ -169,7 +189,7 @@ class Enemy:
         self.x = x
         self.y = y
         self.image = ENEMY
-        self.vel = 2
+        self.vel = 1
         self.mask = pygame.mask.from_surface(self.image)
 
     def draw(self, window):
@@ -188,7 +208,6 @@ class Enemy:
 def collide(obj1, obj2):
     offset_x = obj2.x - obj1.x
     offset_y = obj2.y - obj1.y
-    obj1.mask = pygame.mask.from_surface(EXPLOSION)
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) is not None
 
 
@@ -198,38 +217,61 @@ def main():
     level = 0
     lives = 5
     main_font = pygame.font.SysFont("comicsans", 25)
+    lost_font = pygame.font.SysFont("comicsans", 40)
 
     starting_pos_x = round(WIN_WIDTH - WIN_WIDTH / 2) - round(SPRITE_WIDTH - SPRITE_WIDTH / 2)
     starting_pos_y = round(WIN_HEIGHT - WIN_HEIGHT / 2) - round(SPRITE_HEIGHT - SPRITE_HEIGHT / 2)
-    player_vel = 5
     tank = Tank(starting_pos_x, starting_pos_y)
 
     enemies = []
     wave_length = 0
 
     clock = pygame.time.Clock()
+    lost = False
+    lost_count = 0
 
     def redraw_window():
         WIN.fill(WHITE)
         # draw text
-        lives_label = main_font.render(f"Lives: {lives}", True, (0, 0, 0))
-        level_label = main_font.render(f"Level: {level}", True, (0, 0, 0))
+        lives_label = main_font.render(f"Lives: {lives}", True, BLACK)
+        level_label = main_font.render(f"Level: {level}", True, BLACK)
+        score_label = main_font.render(f"Score: {tank.score}", True, BLACK)
 
         WIN.blit(lives_label, (10, 10))
         WIN.blit(level_label, (WIN_WIDTH - level_label.get_width() - 10, 10))
+        WIN.blit(score_label,
+                 ((WIN_WIDTH - WIN_WIDTH / 2) - (score_label.get_width() - score_label.get_width() / 2), 10))
 
         for enemy in enemies:
             enemy.draw(WIN)
 
         tank.draw(WIN)
 
+        if lost:
+            tank.destroyed = True
+            lost_label = lost_font.render(f"You lost! Score: {tank.score}", True, BLACK)
+            WIN.blit(lost_label,
+                     (WIN_WIDTH / 2 - lost_label.get_width() / 2, WIN_HEIGHT / 2 - lost_label.get_height() / 2))
         pygame.display.update()
 
     while run:
         clock.tick(FPS)
+        redraw_window()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+
+        if lives <= 0:
+            lost = True
+            lost_count += 1
+
+        # show lost label for 3 seconds
+        if lost:
+
+            if lost_count > FPS * 3:
+                run = False
+            else:
+                continue
 
         if len(enemies) == 0:
             level += 1
@@ -239,24 +281,41 @@ def main():
                 enemies.append(enemy)
 
         keys = pygame.key.get_pressed()
-
         if keys[pygame.K_UP] and tank.y - tank.vel > 0:
             tank.move_north()
         elif keys[pygame.K_RIGHT] and tank.x + tank.vel + tank.get_width() < WIN_WIDTH:
             tank.move_east()
-        elif keys[pygame.K_DOWN] and tank.y + player_vel + tank.get_height() < WIN_HEIGHT:
+        elif keys[pygame.K_DOWN] and tank.y + tank.vel + tank.get_height() < WIN_HEIGHT:
             tank.move_south()
         elif keys[pygame.K_LEFT] and tank.x - tank.vel > 0:
             tank.move_west()
         if keys[pygame.K_SPACE]:
             tank.shoot()
+
         for enemy in enemies:
             enemy.chase_tank(tank)
             if collide(enemy, tank):
                 lives -= 1
                 enemies.pop(enemies.index(enemy))
-        redraw_window()
         tank.move_bullets(enemies)
 
 
-main()
+
+def main_menu():
+    title_font = pygame.font.SysFont("comicsans", 50)
+    run = True
+    while run:
+        WIN.fill(WHITE)
+        title_label = title_font.render("Press Enter to begin...", 1, BLACK)
+        WIN.blit(title_label,
+                 (WIN_WIDTH / 2 - title_label.get_width() / 2, WIN_HEIGHT / 2 - title_label.get_height() / 2))
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    main()
+
+
+main_menu()
