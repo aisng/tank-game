@@ -1,8 +1,6 @@
 import math
-
 import pygame
 import os
-import time
 from random import randint
 
 pygame.font.init()
@@ -113,8 +111,7 @@ class Tank:
     def shoot(self):
         self.cooldown()
         if self.bullet_cooldown == 0:
-
-        # if len(self.bullets) < 4:
+            # if len(self.bullets) < 4:
             # center the bullet img on the tank
             tank_center_x, tank_center_y = round(self.x + self.get_width() / 2), round(self.y + self.get_height() / 2)
             bullet_center_x, bullet_center_y = round(tank_center_x - BULLET_WIDTH / 2), round(
@@ -195,6 +192,7 @@ class Enemy:
     def draw(self, window):
         window.blit(self.image, (self.x, self.y))
 
+
     def chase_tank(self, tank):
         # Find direction vector (dx, dy) between enemy and player.
         dx, dy = tank.x - self.x, tank.y - self.y
@@ -267,7 +265,6 @@ def main():
 
         # show lost label for 3 seconds
         if lost:
-
             if lost_count > FPS * 3:
                 run = False
             else:
@@ -300,15 +297,19 @@ def main():
         tank.move_bullets(enemies)
 
 
-
 def main_menu():
     title_font = pygame.font.SysFont("comicsans", 50)
+    instructions_font = pygame.font.SysFont("comicsans", 30)
     run = True
     while run:
         WIN.fill(WHITE)
-        title_label = title_font.render("Press Enter to begin...", 1, BLACK)
+        title_label = title_font.render("Press ENTER to play", True, BLACK)
+        instructions_label = instructions_font.render("ARROW keys to navigate, SPACE to shoot", True, BLACK)
         WIN.blit(title_label,
                  (WIN_WIDTH / 2 - title_label.get_width() / 2, WIN_HEIGHT / 2 - title_label.get_height() / 2))
+        WIN.blit(instructions_label,
+                 (WIN_WIDTH / 2 - instructions_label.get_width() / 2,
+                  (WIN_HEIGHT / 2 - instructions_label.get_height() / 2) + 100))
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
