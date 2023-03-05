@@ -26,16 +26,20 @@ TANK_WEST = pygame.image.load(os.path.join('assets', 'tank-west.png'))
 TANK_WEST = pygame.transform.scale(TANK_WEST, (SPRITE_WIDTH, SPRITE_HEIGHT))
 
 BULLET_NORTH = pygame.image.load(os.path.join('assets', 'bullet-north.png'))
-BULLET_NORTH = pygame.transform.scale(BULLET_NORTH, (BULLET_WIDTH, BULLET_HEIGHT))
+BULLET_NORTH = pygame.transform.scale(
+    BULLET_NORTH, (BULLET_WIDTH, BULLET_HEIGHT))
 
 BULLET_EAST = pygame.image.load(os.path.join('assets', 'bullet-east.png'))
-BULLET_EAST = pygame.transform.scale(BULLET_EAST, (BULLET_WIDTH, BULLET_HEIGHT))
+BULLET_EAST = pygame.transform.scale(
+    BULLET_EAST, (BULLET_WIDTH, BULLET_HEIGHT))
 
 BULLET_SOUTH = pygame.image.load(os.path.join('assets', 'bullet-south.png'))
-BULLET_SOUTH = pygame.transform.scale(BULLET_SOUTH, (BULLET_WIDTH, BULLET_HEIGHT))
+BULLET_SOUTH = pygame.transform.scale(
+    BULLET_SOUTH, (BULLET_WIDTH, BULLET_HEIGHT))
 
 BULLET_WEST = pygame.image.load(os.path.join('assets', 'bullet-west.png'))
-BULLET_WEST = pygame.transform.scale(BULLET_WEST, (BULLET_WIDTH, BULLET_HEIGHT))
+BULLET_WEST = pygame.transform.scale(
+    BULLET_WEST, (BULLET_WIDTH, BULLET_HEIGHT))
 
 ENEMY = pygame.image.load(os.path.join('assets', 'enemy.png'))
 ENEMY = pygame.transform.scale(ENEMY, (SPRITE_WIDTH, SPRITE_HEIGHT))
@@ -113,7 +117,8 @@ class Tank:
         if self.bullet_cooldown == 0:
             # if len(self.bullets) < 4:
             # center the bullet img on the tank
-            tank_center_x, tank_center_y = round(self.x + self.get_width() / 2), round(self.y + self.get_height() / 2)
+            tank_center_x, tank_center_y = round(
+                self.x + self.get_width() / 2), round(self.y + self.get_height() / 2)
             bullet_center_x, bullet_center_y = round(tank_center_x - BULLET_WIDTH / 2), round(
                 tank_center_y - BULLET_HEIGHT / 2)
             # make bullets appear as being shot from tank's cannon
@@ -125,7 +130,8 @@ class Tank:
                 bullet_center_x -= 40
             else:
                 bullet_center_y -= 40
-            bullet = Projectile(bullet_center_x, bullet_center_y, self.bullet_direction)
+            bullet = Projectile(
+                bullet_center_x, bullet_center_y, self.bullet_direction)
             self.bullet_cooldown = 1
             self.bullets.append(bullet)
 
@@ -140,7 +146,8 @@ class Tank:
         win_rect = pygame.Rect(0, 0, WIN_WIDTH, WIN_HEIGHT)
         for bullet in self.bullets:
             bullet.move()
-            if not win_rect.collidepoint((bullet.x, bullet.y)):  # making bullet disappear if off-screen
+            # making bullet disappear if off-screen
+            if not win_rect.collidepoint((bullet.x, bullet.y)):
                 self.bullets.remove(bullet)
             else:  # remove bullet obj and enemy obj if they collide
                 for obj in objs:
@@ -192,7 +199,6 @@ class Enemy:
     def draw(self, window):
         window.blit(self.image, (self.x, self.y))
 
-
     def chase_tank(self, tank):
         # Find direction vector (dx, dy) between enemy and player.
         dx, dy = tank.x - self.x, tank.y - self.y
@@ -217,8 +223,10 @@ def main():
     main_font = pygame.font.SysFont("comicsans", 25)
     lost_font = pygame.font.SysFont("comicsans", 40)
 
-    starting_pos_x = round(WIN_WIDTH - WIN_WIDTH / 2) - round(SPRITE_WIDTH - SPRITE_WIDTH / 2)
-    starting_pos_y = round(WIN_HEIGHT - WIN_HEIGHT / 2) - round(SPRITE_HEIGHT - SPRITE_HEIGHT / 2)
+    starting_pos_x = round(WIN_WIDTH - WIN_WIDTH / 2) - \
+        round(SPRITE_WIDTH - SPRITE_WIDTH / 2)
+    starting_pos_y = round(WIN_HEIGHT - WIN_HEIGHT / 2) - \
+        round(SPRITE_HEIGHT - SPRITE_HEIGHT / 2)
     tank = Tank(starting_pos_x, starting_pos_y)
 
     enemies = []
@@ -247,7 +255,8 @@ def main():
 
         if lost:
             tank.destroyed = True
-            lost_label = lost_font.render(f"You lost! Score: {tank.score}", True, BLACK)
+            lost_label = lost_font.render(
+                f"You lost! Score: {tank.score}", True, BLACK)
             WIN.blit(lost_label,
                      (WIN_WIDTH / 2 - lost_label.get_width() / 2, WIN_HEIGHT / 2 - lost_label.get_height() / 2))
         pygame.display.update()
@@ -274,7 +283,8 @@ def main():
             level += 1
             wave_length += 1
             for i in range(wave_length):
-                enemy = Enemy(randint(10, WIN_WIDTH - 10), randint(10, WIN_HEIGHT - 10))
+                enemy = Enemy(randint(10, WIN_WIDTH - 10),
+                              randint(10, WIN_HEIGHT - 10))
                 enemies.append(enemy)
 
         keys = pygame.key.get_pressed()
@@ -304,7 +314,8 @@ def main_menu():
     while run:
         WIN.fill(WHITE)
         title_label = title_font.render("Press ENTER to play", True, BLACK)
-        instructions_label = instructions_font.render("ARROW keys to navigate, SPACE to shoot", True, BLACK)
+        instructions_label = instructions_font.render(
+            "ARROW keys to navigate, SPACE to shoot", True, BLACK)
         WIN.blit(title_label,
                  (WIN_WIDTH / 2 - title_label.get_width() / 2, WIN_HEIGHT / 2 - title_label.get_height() / 2))
         WIN.blit(instructions_label,
