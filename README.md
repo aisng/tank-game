@@ -4,7 +4,7 @@ A simple game build using pygame.
 ## Running the application
 
 1. Clone the repo.
-2. Run 
+2. Go to the app directory where `tank.py` is located and run: 
 ```bash
 python tank.py
 ```
